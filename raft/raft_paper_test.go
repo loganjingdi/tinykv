@@ -902,7 +902,8 @@ func commitNoopEntry(r *Raft, s *MemoryStorage) {
 	msgs := r.readMessages()
 	for _, m := range msgs {
 		if m.MsgType != pb.MessageType_MsgAppend || len(m.Entries) != 1 || m.Entries[0].Data != nil {
-			panic("not a message to append noop entry")
+			s := string("not a message to append noop entry: " + string(len(m.Entries)) + string(m.Entries[0].Data))
+			panic(s)
 		}
 		r.Step(acceptAndReply(m))
 	}

@@ -56,7 +56,10 @@ type RaftLog struct {
 // to the state that it just commits and applies the latest snapshot.
 func newLog(storage Storage) *RaftLog {
 	// Your Code Here (2A).
-	return nil
+	return &RaftLog {
+		storage : storage,
+		entries : make([]pb.Entry, 1),
+	}
 }
 
 // We need to compact the log entries in some point of time like
@@ -64,28 +67,62 @@ func newLog(storage Storage) *RaftLog {
 // grow unlimitedly in memory
 func (l *RaftLog) maybeCompact() {
 	// Your Code Here (2C).
+
 }
+
+// To generate the *Entry message that Append Msg needs
+func (l *RaftLog) getAppendEntries() []*pb.Entry {
+	// the slice will not contain right border
+	lo, hi := l.applied, l.committed + 1
+	ents , _ := l.Entries(lo, hi)
+	entries := make([]*pb.Entry, 0)
+	for _,e := range ents {
+		entries = append(entries, &e)
+	}
+	return entries
+}
+
+// implement the interface of storage, return from lo to hi
+// at least return one each time
+func (l *RaftLog) Entries(lo, hi uint64) ([]pb.Entry, error) {
+	offset := l.entries[0].Index
+	return l.entries[lo-offset:hi-offset], nil
+}
+
 
 // unstableEntries return all the unstable entries
 func (l *RaftLog) unstableEntries() []pb.Entry {
 	// Your Code Here (2A).
-	return nil
+	lo, hi := l.applied, l.committed + 1
+	offset := l.entries[0].Index
+	return l.entries[lo-offset:hi-offset]
 }
 
 // nextEnts returns all the committed but not applied entries
 func (l *RaftLog) nextEnts() (ents []pb.Entry) {
 	// Your Code Here (2A).
-	return nil
+	entries := make([]pb.Entry,0)
+	for i := l.applied; i < l.committed; i++ {
+		entries = append(entries, l.entries[i])
+	}
+	return ents
 }
 
 // LastIndex return the last index of the log entries
 func (l *RaftLog) LastIndex() uint64 {
 	// Your Code Here (2A).
-	return 0
+	offset := l.entries[0].Index
+	idx := offset + uint64(len(l.entries))
+	return idx
+}
+
+func (l *RaftLog) LastTerm() uint64 {
+	return l.entries[uint64(len(l.entries))].Term
 }
 
 // Term return the term of the entry in the given index
 func (l *RaftLog) Term(i uint64) (uint64, error) {
 	// Your Code Here (2A).
-	return 0, nil
+	offset := l.entries[0].Index
+	return l.entries[i-offset].Term, nil
 }
